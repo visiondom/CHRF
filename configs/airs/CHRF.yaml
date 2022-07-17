@@ -1,0 +1,52 @@
+_BASE_: "../base_multih_resnet_h_16bt.yaml"
+MODEL:
+  META_ARCHITECTURE: "CHRFClassifier"
+  WEIGHTS: ""
+  BACKBONE:
+    NAME: build_multhresnet_backbone
+  RESNETS:
+    RES5_DILATION: 2
+  MULTIHRESNETS:
+    RESNET_WEIGHT: "Data/model_zoo/tvR-50.pkl"
+    STAGE_DIVIDE_AT: 4
+    SHARED_FREEZE_AT: 3
+    HIER_FREEZE_AT: [ 0, 0, 0]
+  NECK:
+    NAME: build_attention_dohf_diffM_multih_neck
+    M: [32, 16, 8]
+    POOLING_MODE: "GAP"
+    ADD_LAMBDA: 0.4
+  HEAD:
+    NAME: build_multih_diffM_clsf_head
+    CLS_BIAS: False
+BENCHMARK:
+  HIERARCHY: ["model", "family", "maker"]
+  IN_FEATURES: ["res5"]
+  CLASSIFICATION:
+    POOLING_MODE: "avg"
+  # custom options
+  O_SIZE: (720, 1280)
+
+MHBENCHMARK:
+  CLASSIFICATION:
+    CATEGORY_NUM: [100, 70, 30] # order for ["model", "family", "maker"]
+
+DATASETS:
+  TRAIN: ("airs_multih_train",)
+  TEST: ("airs_multih_val",)
+  TRAINSET_NUM: 6667
+
+SOLVER:
+  STEPS: [100800,124320]
+  MAX_ITER: 134400
+  CHECKPOINT_PERIOD: 44800
+  IMS_PER_BATCH: 8
+
+TEST:
+  EVAL_PERIOD: 840
+  MODE: classify
+  IMS_PER_PROC: 48
+
+OUTPUT_DIR: "./outputs"
+CUDNN_BENCHMARK: True
+VERSION: 2

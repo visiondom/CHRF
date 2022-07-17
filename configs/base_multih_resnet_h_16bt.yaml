@@ -1,0 +1,65 @@
+MODEL:
+  META_ARCHITECTURE: "CHRFClassifier"
+  PIXEL_MEAN: [0.485, 0.456, 0.406]
+  PIXEL_STD: [0.229, 0.224, 0.225]
+  WEIGHTS: ""
+  BACKBONE:
+    NAME: build_multhresnet_backbone
+  RESNETS:
+    DEPTH: 50
+    NORM: "BN"
+    RES2_OUT_CHANNELS: 256
+    STRIDE_IN_1X1: False
+    OUT_FEATURES: ["res5"]
+  MULTIHRESNETS:
+    RESNET_WEIGHT: "Data/model_zoo/tvR-50.pkl"
+    STAGE_DIVIDE_AT: 4
+    SHARED_FREEZE_AT: 3
+    HIER_FREEZE_AT: [ 0, 0, 0, 0]
+  HEAD:
+    NAME: build_multih_clsf_head
+    SCALE: 20.0
+BENCHMARK:
+  IN_FEATURES: ["res5"]
+  CLASSIFICATION:
+    POOLING_MODE: "avg"
+  # custom options
+  LOAD_GAZE: True
+  GATTENTION_MODE: "product_sum"  # [ "product_sum","fmap-gmap_cat","mask_cat" ]
+  F_WEIGHTS: 1.0
+  G_WEIGHTS: 0.0
+MHBENCHMARK:
+  CLASSIFICATION:
+    CATEGORY_NUM: [200, 122, 37, 13] # order for ['class', 'genera', 'family', 'order']
+INPUT:
+  FORMAT: "RGB"
+  FULL_SIZE: 512
+  PATCH_SIZE: [448,448]
+  FULL_SIZE_TEST: 448
+  PATCH_SIZE_TEST: [ 448,448 ]
+DATASETS:
+  TRAIN: ("cub_multih_clsf_train_h",)
+  TEST: ("cub_multih_clsf_val_h",)
+DATALOADER:
+  NUM_WORKERS: 4
+
+SOLVER:
+  LR_SCHEDULER_NAME: MultiStepLR
+  STEPS: [45000,55500]
+  OPTIM: "SGD"
+  BASE_LR: 0.001
+  WEIGHT_DECAY: 0.00005
+  GAMMA: 0.1
+  MOMENTUM: 0.9
+  MAX_ITER: 60000
+  CHECKPOINT_PERIOD: 20000
+  IMS_PER_BATCH: 8
+
+TEST:
+  EVAL_PERIOD: 1500
+  MODE: classify
+  IMS_PER_PROC: 48
+VIS_PERIOD: 375
+OUTPUT_DIR: "./outputs"
+CUDNN_BENCHMARK: True
+VERSION: 2
