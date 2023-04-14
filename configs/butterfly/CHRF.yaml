@@ -1,0 +1,71 @@
+_BASE_: "../base_multih_resnet_h_16bt.yaml"
+MODEL:
+  META_ARCHITECTURE: "CHRFClassifier"
+  WEIGHTS: ""
+  BACKBONE:
+    NAME: build_multhresnet_backbone
+  RESNETS:
+    RES5_DILATION: 2
+  MULTIHRESNETS:
+    RESNET_WEIGHT: "Data/model_zoo/tvR-50.pkl"
+    STAGE_DIVIDE_AT: 4
+    SHARED_FREEZE_AT: 3
+    HIER_FREEZE_AT: [ 0, 0, 0, 0]
+  NECK:
+    NAME: build_attention_dohf_diffM_multih_neck
+    M: [32, 16, 8, 4]
+    POOLING_MODE: "GAP"
+    ADD_LAMBDA: 0.4
+  HEAD:
+    NAME: build_multih_diffM_clsf_head
+    CLS_BIAS: False
+BENCHMARK:
+  HIERARCHY: ['species', 'genus', 'subfamily', 'family']
+  IN_FEATURES: ["res5"]
+  CLASSIFICATION:
+    POOLING_MODE: "avg"
+  # custom options
+  LOAD_GAZE: False
+  KEEP_SAME_GAZE_NUM: True
+  O_SIZE: (720, 1280)
+  OrthRegRegularization: "COR"  # "OR", "COR", "C"
+  ORR_LAMBDA: 1.0
+  SIGMA: [0.8, 0.8, 0.01, 0.0000001]
+  CENTER_BETA: 5e-2
+
+MHBENCHMARK:
+  CLASSIFICATION:
+    CATEGORY_NUM: [200, 116, 23, 5] # order for ['species', 'genus', 'subfamily', 'family']
+INPUT:
+  FORMAT: "RGB"
+  FULL_SIZE: 448
+  PATCH_SIZE: [ 448,448 ]
+  FULL_SIZE_TEST: 448
+  PATCH_SIZE_TEST: [ 448,448 ]
+
+DATASETS:
+  TRAIN: ("butterfly_multih_train",)
+  TEST: ("butterfly_multih_test",)
+  TRAINSET_NUM: 5135
+
+DATALOADER:
+  NUM_WORKERS: 4
+
+SOLVER:
+  LR_SCHEDULER_NAME: "ContinuousExponentialLR"
+  GAMMA: 0.9
+  STEPS: [29000,35700]
+  BASE_LR: 0.001
+  WEIGHT_DECAY: 0.00001
+  MAX_ITER: 38600 # 640 iter per epoch
+  CHECKPOINT_PERIOD: 13000
+  IMS_PER_BATCH: 8
+
+TEST:
+  EVAL_PERIOD: 640
+  MODE: classify
+  IMS_PER_PROC: 8
+VIS_PERIOD: 1280
+OUTPUT_DIR: "./outputs/butterfly/chrf"
+CUDNN_BENCHMARK: True
+VERSION: 2
